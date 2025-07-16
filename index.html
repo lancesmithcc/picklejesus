@@ -436,7 +436,7 @@
             const cache = dialogCache[character];
             if (cache.length < 2) { // Fetch more when running low
                 try {
-                    const response = await fetch(`/api/dialog/pregen?character=${encodeURIComponent(character)}`);
+                    const response = await fetch(`/.netlify/functions/dialog?character=${encodeURIComponent(character)}`);
                     const data = await response.json();
                     dialogCache[character] = [...cache, ...data.lines];
                 } catch (error) {

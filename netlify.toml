@@ -1,7 +1,2 @@
 [build]
-  functions = "functions"
- 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/dialog"
-  status = 200 
+  functions = "functions" 
