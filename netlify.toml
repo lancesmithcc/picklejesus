@@ -3,5 +3,5 @@
  
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/server/:splat"
+  to = "/.netlify/functions/dialog"
   status = 200 

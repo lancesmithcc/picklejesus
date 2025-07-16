@@ -1,16 +1,9 @@
 require('dotenv').config();
-const express = require('express');
 const fetch = require('node-fetch');
-const cors = require('cors');
-const serverless = require('serverless-http');
 
-const app = express();
-const router = express.Router();
+exports.handler = async (event, context) => {
+    const { character } = event.queryStringParameters;
 
-app.use(cors());
-app.use(express.json());
-
-async function generateDialog(character) {
     const prompt = `
         You are ${character}, a character in a fighting game. 
         Generate 5 short, witty, and slightly absurd taunts (max 10 words each), inspired by "Pickle's Day Out".
@@ -40,20 +33,15 @@ async function generateDialog(character) {
         const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
         const jsonString = jsonMatch ? jsonMatch[1] : content;
 
-        // Assuming the response is a JSON array string
-        return JSON.parse(jsonString);
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ lines: JSON.parse(jsonString) })
+        };
     } catch (error) {
         console.error('DeepSeek API error:', error);
-        return [`My lips are sealed... for now. 😡`];
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ lines: [`My lips are sealed... for now. 😡`] })
+        };
     }
-}
-
-router.get('/dialog/pregen', async (req, res) => {
-    const { character } = req.query;
-    const dialogs = await generateDialog(character);
-    res.json({ lines: dialogs });
-});
-
-app.use('/.netlify/functions/server', router);
-
-module.exports.handler = serverless(app); 
+}; 

@@ -356,6 +356,59 @@
             'Tomato Jesus': []
         };
 
+        // Fallback dialogs
+        const backupDialogs = {
+            'Pickle Jesus': [
+                "Repent, for the kingdom of brine is at hand! 🙏",
+                "You are but a fleeting sauce, I am eternal preservation! 🥒",
+                "I was cured for your sins, not crushed for your pasta! 🍝",
+                "Thou shall not covet thy neighbor's vinegar! ✨",
+                "Let he who is without sin cast the first gherkin! 🌿",
+                "Turn the other cheek? I'd rather turn you into relish! 😉",
+                "You're spiritually squishy! 🍅",
+                "My flavor is complex, yours is... ketchup. 😑",
+                "Blessed are the pickled, for they shall inherit the earth. 🌎",
+                "You're heading for a bruschetta reckoning! 🔥",
+                "This is my body... of pure, fermented righteousness! 💪",
+                "Get thee behind me, Satan's salad topping! 🥗",
+                "I can walk on brine, can you walk on juice? 💧",
+                "You lack moral fiber... and actual fiber! 😂",
+                "You're no good boy, you're a bad tomato! 🍅",
+                "May your vine wither and your skin split! 💥",
+                "The prophecy spoke of a great pickle, not a sad vegetable! 📜",
+                "Behold, for I am the chosen condiment! 😇",
+                "You're past your expiration date, spiritually speaking! ⏳",
+                "Fear the pickle-pocalypse! 💥"
+            ],
+            'Tomato Jesus': [
+                "I am the fruit of the vine, you are a cucumber soaked in tears! 😭",
+                "The scriptures speak of love, not vinegar! ❤️",
+                "My blood is wine, yours is... salty water. 🍷",
+                "You're a bitter pill to swallow! 🤢",
+                "Blessed are the juicy, for they shall quench the masses! 💧",
+                "I am the Alpha and the Tomato! 🍅",
+                "You're just a side dish to the main course of salvation! 🍽️",
+                "Is that your halo or a jar ring? 😇",
+                "You're too salty for my taste! 🧂",
+                "Let's see you turn water into... well, anything! 🤷",
+                "You were created in a jar, I grow from the earth! 🌱",
+                "They call it 'sun-dried' for a reason, it's divine intervention! ☀️",
+                "You're a false prophet of flavor! 🤢",
+                "My seeds will spread across the land, yours are sterile! 🌱",
+                "You're all crunch and no soul! 💔",
+                "I'll make you into a bloody mary! 🍹",
+                "The pasta-farians worship me, who worships you? The deli man? 🥪",
+                "You're a dill-usion! 😂",
+                "You can't handle my marinara miracles! ✨",
+                "Prepare for a holy roasting! 🔥"
+            ]
+        };
+
+        function getBackupDialog(character) {
+            const lines = backupDialogs[character];
+            return lines[Math.floor(Math.random() * lines.length)];
+        }
+
         // Speech bubble and emoji elements
         let emojiContainer;
         let dialogStack;
@@ -398,7 +451,7 @@
             if (dialogCache[characterName].length === 0) {
                  await fetchDialogFor(characterName); // Wait for new dialog if empty
             }
-            const text = dialogCache[characterName].shift() || `I'm out of words! 😮`;
+            const text = dialogCache[characterName].shift() || getBackupDialog(characterName);
             fetchDialogFor(characterName); // Pre-fetch for next time
 
             const hitEmojis = ['💥', '👊', '💢', '🔥', '💫', '⚡️', '🌶️', '🥒'];
