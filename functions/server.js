@@ -54,6 +54,6 @@ router.get('/dialog/pregen', async (req, res) => {
     res.json({ lines: dialogs });
 });
 
-app.use('/', router);
+app.use('/.netlify/functions/server', router);
 
 module.exports.handler = serverless(app); 
