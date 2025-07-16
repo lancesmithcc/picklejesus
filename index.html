@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pickle Man</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background:url(bg.png);
+            font-family: 'Press Start 2P', cursive;
+        }
+        canvas { 
+            display: block; 
+            position: relative;
+            z-index: 2;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:url(bg.png);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: white;
+            font-size: 24px;
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+        }
+        #sound-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 20;
+            padding: 10px;
+            cursor: pointer;
+            background: #fff;
+            border: 1px solid #000;
+        }
+        .health-bar-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 5;
+        }
+        .player-info {
+            width: 45%;
+        }
+        .name {
+            color: white;
+            text-shadow: 2px 2px #000;
+        }
+        .health-bar {
+            width: 100%;
+            height: 30px;
+            background: #555;
+            border: 2px solid #000;
+        }
+        #pickle-hp, #tomato-hp {
+            height: 100%;
+            background: #ff0000;
+            width: 100%;
+        }
+        .speech-bubble {
+            position: absolute;
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 14px;
+            max-width: 150px;
+            text-align: center;
+            z-index: 100;
+            display: none; /* Hidden by default */
+            transform: translate(-50%, -120%);
+        }
+        .emoji-explosion {
+            position: absolute;
+            font-size: 24px;
+            z-index: 101;
+            display: none; /* Hidden by default */
+            animation: explode 0.5s forwards;
+        }
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+        #dialog-stack {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1; /* Behind characters */
+            width: 80vw;
+            max-width: 600px; /* Max width for chat */
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Start messages at the bottom */
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-bottom: 8px;
+            max-width: 70%;
+            font-size: 16px;
+            line-height: 1.4;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .pickle-message {
+            background-color: #2E7D32; /* Green */
+            color: #fff;
+            align-self: flex-start;
+        }
+
+        .tomato-message {
+            background-color: #C62828; /* Red */
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .dialog-line {
+            font-size: 55px;
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+            word-break: break-word;
+            text-shadow: 2px 2px 8px #000;
+            margin: 10px 0;
+            opacity: 1;
+            transition: opacity 0.7s;
+        }
+        .dialog-line.fade {
+            opacity: 0;
+        }
+        #pickle-hp {
+            background: #00ff00;
+        }
+        #tomato-hp {
+            background: #ff0000;
+        }
+        #game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center; /* Center vertically */
+            align-items: center;
+            z-index: 5; /* On top of everything */
+            flex-direction: column;
+            padding-bottom: 300px; /* Precise adjustment */
+        }
+        #game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            z-index: 3; /* Behind winner model and text */
+        }
+        #game-over-text {
+            font-size: 48px;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 8px #000;
+        }
+        #play-again-btn {
+            font-size: 24px;
+            font-family: 'Press Start 2P', cursive;
+            padding: 15px 30px;
+            background: #00ff00;
+            border: 3px solid #fff;
+            color: #000;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #play-again-btn:hover {
+            background: #ffff00;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="health-bar-container">
+        <div class="player-info">
+            <div class="name">Pickle Jesus</div>
+            <div class="health-bar">
+                <div id="pickle-hp"></div>
+            </div>
+        </div>
+        <div class="player-info" style="text-align: right;">
+            <div class="name">Tomato Jesus</div>
+            <div class="health-bar">
+                <div id="tomato-hp"></div>
+            </div>
+        </div>
+    </div>
+    <div id="overlay">
+        <div>Click to start the experience</div>
+    </div>
+    <div id="game-over-screen">
+        <div id="game-over-text"></div>
+        <button id="play-again-btn">PLAY AGAIN</button>
+    </div>
+    <div id="dialog-stack"></div>
+    <audio id="bgm" src="picklejesus.mp3" loop></audio>
+    <button id="sound-toggle">Mute</button>
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        // IMPORTANT NOTE:
+        // The errors you're seeing (ProgressEvent) indicate that the browser is blocking the loading of local files (GLB models and MP3)
+        // due to security restrictions when opening the HTML file directly via file:// protocol.
+        // To fix this, you MUST run a local web server in the directory containing this HTML, the GLB files, and the MP3.
+        // On your Mac:
+        // 1. Open Terminal.
+        // 2. Navigate to the folder (e.g., cd /path/to/your/folder).
+        // 3. Run: python3 -m http.server
+        // 4. Open your browser and go to http://localhost:8000 (or the port it shows).
+        // 5. Click on index.html if needed.
+        // This simulates a real web server and allows loading local assets.
+        // If you don't do this, the models and music won't load, and you'll see fallbacks and errors.
+
+        // Three.js setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(0, 10, 10);
+        scene.add(directionalLight);
+
+        // Fallback primitives in case models fail to load
+        let pickleJesus;
+        let tomatoJesus;
+        const groundLevel = -3; // Lower the ground level
+
+        // Pickle Jesus fallback - green cylinder
+        const pickleGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 32);
+        const pickleMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+        const pickleFallback = new THREE.Mesh(pickleGeometry, pickleMaterial);
+        pickleFallback.position.set(-2, groundLevel, 0);
+        scene.add(pickleFallback); // Add fallback initially
+
+        // Tomato Jesus fallback - red sphere
+        const tomatoGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const tomatoMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+        const tomatoFallback = new THREE.Mesh(tomatoGeometry, tomatoMaterial);
+        tomatoFallback.position.set(2, groundLevel, 0);
+        scene.add(tomatoFallback); // Add fallback initially
+
+        // Load Pickle Jesus GLB model with error handling
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+            'picklejesus.glb',
+            (gltf) => {
+                console.log('Pickle Jesus model loaded successfully');
+                pickleJesus = gltf.scene;
+                pickleJesus.position.set(-2, groundLevel, 0);
+                pickleJesus.scale.set(0.5, 0.5, 0.5);
+                const pickleHalo = createHalo();
+                pickleHalo.position.y = 4.5; // Final adjustment
+                pickleJesus.add(pickleHalo);
+                scene.add(pickleJesus);
+                scene.remove(pickleFallback); // Remove fallback if loaded
+            },
+            undefined,
+            (error) => {
+                console.error('Error loading Pickle Jesus model:', error);
+                alert('Failed to load Pickle Jesus model. Please run a local web server (e.g., python3 -m http.server) and access via http://localhost:8000. Error: ' + error);
+                pickleJesus = pickleFallback;
+            }
+        );
+
+        // Load Tomato Jesus GLB model with error handling
+        loader.load(
+            'tomatojesus.glb',
+            (gltf) => {
+                console.log('Tomato Jesus model loaded successfully');
+                tomatoJesus = gltf.scene;
+                tomatoJesus.position.set(2, groundLevel, 0);
+                tomatoJesus.scale.set(0.5, 0.5, 0.5);
+                tomatoJesus.rotation.y = Math.PI; // Rotate 180 degrees
+                const tomatoHalo = createHalo();
+                tomatoHalo.position.y = 2.5; // Adjust height over tomato head
+                tomatoJesus.add(tomatoHalo);
+                scene.add(tomatoJesus);
+                scene.remove(tomatoFallback); // Remove fallback if loaded
+            },
+            undefined,
+            (error) => {
+                console.error('Error loading Tomato Jesus model:', error);
+                alert('Failed to load Tomato Jesus model. Please run a local web server (e.g., python3 -m http.server) and access via http://localhost:8000. Error: ' + error);
+                tomatoJesus = tomatoFallback;
+            }
+        );
+
+        camera.position.z = 5;
+
+        // Projectiles
+        let garlics = [];
+        let sauces = [];
+
+        // Health
+        let pickleHealth = 500;
+        let tomatoHealth = 500;
+
+        // Player physics
+        let pickleVelocityY = 0;
+        const gravity = -0.01; // Slower gravity
+        let isPickleJumping = false;
+
+        // Enemy physics
+        let tomatoVelocityY = 0;
+
+        // Sound state
+        let isMuted = false;
+
+        // Attack cooldown
+        const shootCooldown = 3000; // 3 seconds
+        let lastPickleShot = 0;
+        let lastTomatoShot = 0;
+
+        // Game state
+        let gameOver = false;
+
+        // Dialog Caching
+        const dialogCache = {
+            'Pickle Jesus': [],
+            'Tomato Jesus': []
+        };
+
+        // Speech bubble and emoji elements
+        let emojiContainer;
+        let dialogStack;
+
+        // Controls
+        const keys = {};
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            dialogStack = document.createElement('div');
+            dialogStack.id = 'dialog-stack';
+            document.body.appendChild(dialogStack);
+            emojiContainer = document.createElement('div');
+            document.body.appendChild(emojiContainer);
+
+            document.getElementById('play-again-btn').addEventListener('click', restartGame);
+
+            // Pre-fill dialog cache
+            fetchDialogFor('Pickle Jesus');
+            fetchDialogFor('Tomato Jesus');
+        });
+
+        async function fetchDialogFor(character) {
+            if (dialogCache[character].length < 3) { // Fetch when 2 lines are left
+                try {
+                    const response = await fetch(`/api/dialog/pregen?character=${encodeURIComponent(character)}`);
+                    const data = await response.json();
+                    dialogCache[character].push(...data.lines);
+                } catch(e) {
+                    console.error("Failed to fetch new dialog:", e);
+                }
+            }
+        }
+
+        // Function to show speech bubble and emojis
+        async function showHitReaction(character, health, model) {
+            if (dialogCache[character].length === 0) {
+                 await fetchDialogFor(character); // Wait for new dialog if empty
+            }
+            const text = dialogCache[character].shift() || `I'm out of words! 😮`;
+            fetchDialogFor(character); // Pre-fetch for next time
+
+            const hitEmojis = ['💥', '👊', '💢', '🔥', '💫', '⚡️', '🌶️', '🥒'];
+            const randomEmoji = hitEmojis[Math.floor(Math.random() * hitEmojis.length)];
+
+            // Create and show a new dialog line
+            const messageDiv = document.createElement('div');
+            messageDiv.className = character === 'Pickle Jesus' ? 'message pickle-message' : 'message tomato-message';
+            messageDiv.textContent = text.replace(/(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu, '').trim();
+            dialogStack.appendChild(messageDiv);
+
+            // Scroll to the bottom
+            dialogStack.scrollTop = dialogStack.scrollHeight;
+
+            // Remove the message after a delay to prevent clutter
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => messageDiv.remove(), 500);
+            }, 4000);
+
+            // Show emoji explosion
+            const screenPos = toScreenPosition(model, camera);
+            for (let i = 0; i < 5; i++) {
+                const emojiSpan = document.createElement('span');
+                emojiSpan.className = 'emoji-explosion';
+                emojiSpan.textContent = randomEmoji;
+                const offsetX = Math.random() * 60 - 30;
+                const offsetY = Math.random() * 60 - 30;
+                emojiSpan.style.left = `${screenPos.x + offsetX}px`;
+                emojiSpan.style.top = `${screenPos.y + offsetY}px`;
+                emojiSpan.style.display = 'block';
+                emojiContainer.appendChild(emojiSpan);
+                setTimeout(() => emojiSpan.remove(), 500);
+            }
+        }
+
+        let winnerModel = null;
+        function showGameOverScreen(winner) {
+            gameOver = true;
+
+            const winnerName = winner;
+            winnerModel = winnerName === 'Pickle Jesus' ? pickleJesus : tomatoJesus;
+            const loserModel = winnerName === 'Pickle Jesus' ? tomatoJesus : pickleJesus;
+
+            if (loserModel) loserModel.visible = false;
+            if (winnerModel) {
+                winnerModel.position.set(0, groundLevel, 0);
+                renderer.domElement.style.zIndex = 4; // Bring canvas to front
+            }
+
+
+            // Fade out music
+            const bgm = document.getElementById('bgm');
+            let volume = bgm.volume;
+            const fadeOutInterval = setInterval(() => {
+                if (volume > 0.1) {
+                    volume -= 0.1;
+                    bgm.volume = volume;
+                } else {
+                    bgm.pause();
+                    clearInterval(fadeOutInterval);
+                }
+            }, 100);
+
+            // Show game over screen
+            document.getElementById('game-over-overlay').style.display = 'block';
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const gameOverText = document.getElementById('game-over-text');
+            gameOverText.textContent = `${winner} Wins!`;
+            gameOverScreen.style.display = 'flex';
+            // Adjust justification after display
+            gameOverScreen.style.justifyContent = 'center';
+        }
+
+        function restartGame() {
+            gameOver = false;
+            pickleHealth = 500;
+            tomatoHealth = 500;
+            
+            if(pickleJesus) {
+                pickleJesus.position.set(-2, groundLevel, 0);
+                pickleJesus.visible = true;
+                pickleJesus.renderOrder = 0;
+                pickleJesus.traverse(child => {
+                    if (child.isMesh) child.renderOrder = 0;
+                });
+            }
+            if(tomatoJesus) {
+                tomatoJesus.position.set(2, groundLevel, 0);
+                tomatoJesus.visible = true;
+                tomatoJesus.renderOrder = 0;
+                tomatoJesus.traverse(child => {
+                    if (child.isMesh) child.renderOrder = 0;
+                });
+            }
+
+            garlics.forEach(g => scene.remove(g));
+            sauces.forEach(s => scene.remove(s));
+            garlics = [];
+            sauces = [];
+            dialogStack.innerHTML = '';
+
+            document.getElementById('game-over-overlay').style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'none';
+            renderer.domElement.style.zIndex = 2; // Reset canvas z-index
+
+            // Pre-fill dialog cache
+            fetchDialogFor('Pickle Jesus');
+            fetchDialogFor('Tomato Jesus');
+
+            const bgm = document.getElementById('bgm');
+            bgm.currentTime = 0;
+            bgm.volume = 1;
+            bgm.play();
+
+            camera.position.set(0, 0, 5);
+            camera.lookAt(0, 0, 0);
+
+            animate();
+        }
+
+        function toScreenPosition(obj, camera) {
+            const vector = new THREE.Vector3();
+            obj.getWorldPosition(vector);
+            vector.project(camera);
+            return {
+                x: (vector.x * .5 + .5) * renderer.domElement.clientWidth,
+                y: (vector.y * -.5 + .5) * renderer.domElement.clientHeight
+            };
+        }
+
+        // Play music on user interaction to comply with autoplay policies
+        document.body.addEventListener('click', () => {
+            const overlay = document.getElementById('overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            const bgm = document.getElementById('bgm');
+            bgm.play().then(() => {
+                console.log('Music started playing');
+            }).catch(err => {
+                console.error('Error playing music:', err);
+                alert('Failed to play music. Ensure you\'re running a local server and click on the page to start audio. Error: ' + err);
+            });
+        }, { once: true });
+
+        // Sound toggle button
+        const soundButton = document.getElementById('sound-toggle');
+        soundButton.addEventListener('click', () => {
+            isMuted = !isMuted;
+            document.getElementById('bgm').muted = isMuted;
+            soundButton.textContent = isMuted ? 'Unmute' : 'Mute';
+        });
+
+        // Web Audio API for sound effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Function to play sound effect (simple beep for attacks)
+        function playSound(frequency = 440, duration = 0.1) {
+            if (isMuted) return;
+            const oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            oscillator.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function createHalo() {
+            const geometry = new THREE.TorusGeometry(0.7, 0.05, 16, 100);
+            const material = new THREE.MeshPhongMaterial({ color: 0xFFD700, emissive: 0xFFD700 });
+            const halo = new THREE.Mesh(geometry, material);
+            halo.rotation.x = Math.PI / 2;
+            return halo;
+        }
+
+        // Game loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!pickleJesus || !tomatoJesus) {
+                return; // Wait for both models to load
+            }
+
+            if (gameOver) {
+                if (winnerModel) {
+                    const time = Date.now() * 0.0005;
+                    camera.position.x = Math.sin(time) * 3; // Closer rotation
+                    camera.position.z = Math.cos(time) * 3; // Closer rotation
+                    camera.lookAt(winnerModel.position);
+                }
+                renderer.render(scene, camera);
+                return;
+            }
+
+            // Animate halos
+            if (pickleJesus && pickleJesus.children.length > 1) {
+                pickleJesus.children[1].rotation.z += 0.02;
+            }
+            if (tomatoJesus && tomatoJesus.children.length > 1) {
+                tomatoJesus.children[1].rotation.z += 0.02;
+            }
+
+            // Player movement (Pickle Jesus)
+            // Apply gravity and check for ground
+            pickleJesus.position.y += pickleVelocityY;
+            pickleVelocityY += gravity;
+
+            if (pickleJesus.position.y < groundLevel) {
+                pickleJesus.position.y = groundLevel;
+                pickleVelocityY = 0;
+                isPickleJumping = false;
+            }
+
+            // Handle player input for movement
+            if (keys['ArrowLeft']) pickleJesus.position.x -= 0.07; // Slower movement
+            if (keys['ArrowRight']) pickleJesus.position.x += 0.07; // Slower movement
+            
+            // Jumping
+            if (keys['ArrowUp'] && !isPickleJumping) {
+                pickleVelocityY = 0.4; // Lower jump
+                isPickleJumping = true;
+            }
+
+            // Stomp detection
+            if (pickleJesus.position.y > tomatoJesus.position.y && pickleVelocityY < 0) {
+                const distance = pickleJesus.position.distanceTo(tomatoJesus.position);
+                if (distance < 0.75) { // Check if they are close enough
+                    tomatoHealth -= 25; // More damage for a stomp
+                    pickleVelocityY = 0.4; // Bounce up
+                    playSound(150, 0.2); // Deeper sound for stomp
+                    console.log('Pickle stomped Tomato! Tomato Health:', tomatoHealth);
+                    showHitReaction('Tomato Jesus', tomatoHealth, tomatoJesus);
+                }
+            }
+
+            // Attack (shoot garlic with space)
+            if (keys[' '] && Date.now() - lastPickleShot > shootCooldown) {
+                lastPickleShot = Date.now();
+                const garlicGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+                const garlicMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+                const garlic = new THREE.Mesh(garlicGeometry, garlicMaterial);
+                garlic.position.set(pickleJesus.position.x + 0.6, pickleJesus.position.y, pickleJesus.position.z);
+                scene.add(garlic);
+                garlics.push(garlic);
+                playSound(660, 0.05); // High beep for garlic
+            }
+        
+            // Update health bars
+            document.getElementById('pickle-hp').style.width = (pickleHealth / 500 * 100) + '%';
+            document.getElementById('tomato-hp').style.width = (tomatoHealth / 500 * 100) + '%';
+
+
+            // Enemy AI (Tomato Jesus) - simple movement and attack
+            // Random jumping for Tomato
+            if (Math.random() < 0.01 && tomatoJesus.position.y === groundLevel) {
+                tomatoVelocityY = 0.5; // Jump strength
+            }
+
+            // Apply gravity to Tomato
+            tomatoJesus.position.y += tomatoVelocityY;
+            tomatoVelocityY += gravity;
+
+            // Ground check for Tomato
+            if (tomatoJesus.position.y < groundLevel) {
+                tomatoJesus.position.y = groundLevel;
+                tomatoVelocityY = 0;
+            }
+
+            if (Math.random() < 0.02 && Date.now() - lastTomatoShot > shootCooldown) { // Increased chance but with cooldown
+                lastTomatoShot = Date.now();
+                const sauceGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+                const sauceMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+                const sauce = new THREE.Mesh(sauceGeometry, sauceMaterial);
+                sauce.position.set(tomatoJesus.position.x - 0.6, tomatoJesus.position.y, tomatoJesus.position.z);
+                scene.add(sauce);
+                sauces.push(sauce);
+                playSound(330, 0.05); // Mid beep for sauce
+            }
+
+            // Enemy movement - chase player
+            if (tomatoJesus.position.x > pickleJesus.position.x) tomatoJesus.position.x -= 0.03; // Slower chase
+            if (tomatoJesus.position.x < pickleJesus.position.x) tomatoJesus.position.x += 0.03; // Slower chase
+
+            // Stomp detection for tomato
+            if (tomatoJesus.position.y > pickleJesus.position.y && tomatoVelocityY < 0) {
+                    const distance = tomatoJesus.position.distanceTo(pickleJesus.position);
+                if (distance < 0.75) {
+                    pickleHealth -= 25;
+                    tomatoVelocityY = 0.4; // Bounce
+                    playSound(150, 0.2);
+                    console.log('Tomato stomped Pickle! Pickle Health:', pickleHealth);
+                    showHitReaction('Pickle Jesus', pickleHealth, pickleJesus);
+                }
+            }
+
+            // Check game over
+            if (pickleHealth <= 0 || tomatoHealth <= 0) {
+                const winner = pickleHealth <= 0 ? 'Tomato Jesus' : 'Pickle Jesus';
+                showGameOverScreen(winner);
+            }
+
+            // Move garlic projectiles
+            garlics = garlics.filter(g => {
+                g.position.x += 0.15; // Slower projectile
+                if (g.position.x > 15) { // Adjusted boundary
+                    scene.remove(g);
+                    return false;
+                }
+                // Check collision with tomato
+                if (tomatoJesus && Math.abs(g.position.x - tomatoJesus.position.x) < 0.5 && Math.abs(g.position.y - tomatoJesus.position.y) < 0.5) {
+                    tomatoHealth -= 10;
+                    playSound(220, 0.1); // Low beep for hit
+                    scene.remove(g);
+                    showHitReaction('Tomato Jesus', tomatoHealth, tomatoJesus);
+                    return false;
+                }
+                return true;
+            });
+
+            // Move sauce projectiles
+            sauces = sauces.filter(s => {
+                s.position.x -= 0.15; // Slower projectile
+                if (s.position.x < -15) { // Adjusted boundary
+                    scene.remove(s);
+                    return false;
+                }
+                // Check collision with pickle
+                if (pickleJesus && Math.abs(s.position.x - pickleJesus.position.x) < 0.5 && Math.abs(s.position.y - pickleJesus.position.y) < 0.5) {
+                    pickleHealth -= 10;
+                    playSound(220, 0.1); // Low beep for hit
+                    scene.remove(s);
+                    showHitReaction('Pickle Jesus', pickleHealth, pickleJesus);
+                    return false;
+                }
+                return true;
+            });
+
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+    <div id="game-over-overlay"></div>
+</body>
+</html>
