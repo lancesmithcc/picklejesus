@@ -5,7 +5,6 @@ const cors = require('cors');
 const serverless = require('serverless-http');
 
 const app = express();
-const router = express.Router();
 
 app.use(cors());
 app.use(express.json());
@@ -48,12 +47,10 @@ async function generateDialog(character) {
     }
 }
 
-router.get('/dialog/pregen', async (req, res) => {
+app.get('/.netlify/functions/server/dialog/pregen', async (req, res) => {
     const { character } = req.query;
     const dialogs = await generateDialog(character);
     res.json({ lines: dialogs });
 });
-
-app.use('/', router);
 
 module.exports.handler = serverless(app); 
