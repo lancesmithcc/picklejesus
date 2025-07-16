@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pickle Man</title>
+    <title>Pickle Jesus</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body { 
@@ -352,8 +352,8 @@
 
         // Dialog Caching
         const dialogCache = {
-            'Pickle Jesus': [],
-            'Tomato Jesus': []
+            pickle: [],
+            tomato: []
         };
 
         // Speech bubble and emoji elements
@@ -380,15 +380,17 @@
         });
 
         async function fetchDialogFor(character) {
-            if (dialogCache[character].length < 3) { // Fetch when 2 lines are left
+            const cache = dialogCache[character];
+            if (cache.length < 2) { // Fetch more when running low
                 try {
-                    const response = await fetch(`/api/dialog/pregen?character=${encodeURIComponent(character)}`);
+                    const response = await fetch(`/api/dialog/pregen?character=${character}`);
                     const data = await response.json();
-                    dialogCache[character].push(...data.lines);
-                } catch(e) {
-                    console.error("Failed to fetch new dialog:", e);
+                    dialogCache[character] = [...cache, ...data.lines];
+                } catch (error) {
+                    console.error('Failed to fetch new dialog:', error);
                 }
             }
+            return dialogCache[character].shift() || "Let's dance!";
         }
 
         // Function to show speech bubble and emojis

@@ -2,14 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
+const serverless = require('serverless-http');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const router = express.Router();
 
 app.use(cors());
 app.use(express.json());
-
-app.use(express.static(__dirname));
 
 async function generateDialog(character) {
     const prompt = `
@@ -49,12 +48,12 @@ async function generateDialog(character) {
     }
 }
 
-app.get('/api/dialog/pregen', async (req, res) => {
+router.get('/dialog/pregen', async (req, res) => {
     const { character } = req.query;
     const dialogs = await generateDialog(character);
     res.json({ lines: dialogs });
 });
 
-app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
-}); 
+app.use('/.netlify/functions/server', router);
+
+module.exports.handler = serverless(app); 
