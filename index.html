@@ -352,8 +352,8 @@
 
         // Dialog Caching
         const dialogCache = {
-            pickle: [],
-            tomato: []
+            'Pickle Jesus': [],
+            'Tomato Jesus': []
         };
 
         // Speech bubble and emoji elements
@@ -394,19 +394,19 @@
         }
 
         // Function to show speech bubble and emojis
-        async function showHitReaction(character, health, model) {
-            if (dialogCache[character].length === 0) {
-                 await fetchDialogFor(character); // Wait for new dialog if empty
+        async function showHitReaction(characterName, health, model) {
+            if (dialogCache[characterName].length === 0) {
+                 await fetchDialogFor(characterName); // Wait for new dialog if empty
             }
-            const text = dialogCache[character].shift() || `I'm out of words! 😮`;
-            fetchDialogFor(character); // Pre-fetch for next time
+            const text = dialogCache[characterName].shift() || `I'm out of words! 😮`;
+            fetchDialogFor(characterName); // Pre-fetch for next time
 
             const hitEmojis = ['💥', '👊', '💢', '🔥', '💫', '⚡️', '🌶️', '🥒'];
             const randomEmoji = hitEmojis[Math.floor(Math.random() * hitEmojis.length)];
 
             // Create and show a new dialog line
             const messageDiv = document.createElement('div');
-            messageDiv.className = character === 'Pickle Jesus' ? 'message pickle-message' : 'message tomato-message';
+            messageDiv.className = characterName === 'Pickle Jesus' ? 'message pickle-message' : 'message tomato-message';
             messageDiv.textContent = text.replace(/(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu, '').trim();
             dialogStack.appendChild(messageDiv);
 
@@ -531,11 +531,11 @@
         }
 
         // Play music on user interaction to comply with autoplay policies
-        document.body.addEventListener('click', () => {
-            const overlay = document.getElementById('overlay');
-            if (overlay) {
-                overlay.style.display = 'none';
-            }
+        const overlay = document.getElementById('overlay');
+        overlay.addEventListener('click', startGame);
+
+        function startGame() {
+            overlay.style.display = 'none';
             const bgm = document.getElementById('bgm');
             bgm.play().then(() => {
                 console.log('Music started playing');
@@ -543,7 +543,7 @@
                 console.error('Error playing music:', err);
                 alert('Failed to play music. Ensure you\'re running a local server and click on the page to start audio. Error: ' + err);
             });
-        }, { once: true });
+        }
 
         // Sound toggle button
         const soundButton = document.getElementById('sound-toggle');
